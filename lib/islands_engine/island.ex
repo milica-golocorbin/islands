@@ -5,8 +5,18 @@ defmodule IslandsEngine.Island do
   @enforce_keys [:coordinates, :hit_coordinates]
   defstruct [:coordinates, :hit_coordinates]
 
+  # WITH EXAMPLE FROM DOCS
+  #   opts = %{width: 10, height: 15}
+  # with {:ok, width} <- Map.fetch(opts, :width),
+  #      {:ok, height} <- Map.fetch(opts, :height) do
+  #   {:ok, width * height}
+  # end
+  # {:ok, 150}
+
   def new(type, %Coordinate{} = upper_left) do
+    #  [_ | _] = offsets is pattern matching
     with [_ | _] = offsets <- offsets(type),
+         # %MapSet{} = coordinates is pattern matching
          %MapSet{} = coordinates <- add_coordinates(offsets, upper_left) do
       {:ok, %Island{coordinates: coordinates, hit_coordinates: MapSet.new()}}
     else
@@ -20,6 +30,12 @@ defmodule IslandsEngine.Island do
   defp offsets(:l_shape), do: [{0, 0}, {1, 0}, {2, 0}, {2, 1}]
   defp offsets(:s_shape), do: [{0, 1}, {0, 2}, {1, 0}, {1, 1}]
   defp offsets(_), do: {:error, :invalid_island_type}
+
+  # def reduce_while(enumerable, acc, fun)
+  #  iex> Enum.reduce_while(1..100, 0, fn x, acc ->
+  # ...>   if x > 0, do: {:cont, acc + x}, else: {:halt, acc}
+  # ...> end)
+  # 5050
 
   defp add_coordinates(offsets, upper_left) do
     Enum.reduce_while(offsets, MapSet.new(), fn offset, acc ->
