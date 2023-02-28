@@ -5,13 +5,8 @@ defmodule IslandsEngine.Island do
   @enforce_keys [:coordinates, :hit_coordinates]
   defstruct [:coordinates, :hit_coordinates]
 
-  # WITH EXAMPLE FROM DOCS
-  #   opts = %{width: 10, height: 15}
-  # with {:ok, width} <- Map.fetch(opts, :width),
-  #      {:ok, height} <- Map.fetch(opts, :height) do
-  #   {:ok, width * height}
-  # end
-  # {:ok, 150}
+  # --------------------------------------------------------
+  # CREATING NEW
 
   def new(type, %Coordinate{} = upper_left) do
     #  [_ | _] = offsets is pattern matching
@@ -31,12 +26,6 @@ defmodule IslandsEngine.Island do
   defp offsets(:s_shape), do: [{0, 1}, {0, 2}, {1, 0}, {1, 1}]
   defp offsets(_), do: {:error, :invalid_island_type}
 
-  # def reduce_while(enumerable, acc, fun)
-  #  iex> Enum.reduce_while(1..100, 0, fn x, acc ->
-  # ...>   if x > 0, do: {:cont, acc + x}, else: {:halt, acc}
-  # ...> end)
-  # 5050
-
   defp add_coordinates(offsets, upper_left) do
     Enum.reduce_while(offsets, MapSet.new(), fn offset, acc ->
       add_coordinate(acc, upper_left, offset)
@@ -52,28 +41,37 @@ defmodule IslandsEngine.Island do
         {:halt, {:error, :invalid_coordinate}}
     end
   end
+
+  # --------------------------------------------------------
+  # LIST OF VALID ISLANDS
+
+  def types(), do: [:atoll, :dot, :l_shape, :s_shape, :square]
+
+  # --------------------------------------------------------
+  # CHECKING FOR OVERLAPPING ISLANDS
+
+  def overlaps?(existing_island, new_island) do
+    not MapSet.disjoint?(existing_island.coordinates, new_island.coordinates)
+  end
+
+  # --------------------------------------------------------
+  # GUESSING FOR HITS
+
+  def guess(island, coordinate) do
+    case MapSet.member?(island.coordinates, coordinate) do
+      true ->
+        hit_coordinates = MapSet.put(island.hit_coordinates, coordinate)
+        {:hit, %{island | hit_coordinates: hit_coordinates}}
+
+      false ->
+        :miss
+    end
+  end
+
+  # --------------------------------------------------------
+  # CHECKING IF IT  IS FORESTED
+
+  def forested?(island) do
+    MapSet.equal?(island.coordinates, island.hit_coordinates)
+  end
 end
-
-# INSIDE IEX
-# iex(9)> alias IslandsEngine.{Coordinate, Island}
-
-# iex(10)> {:ok, coordinate} = Coordinate.new(4, 6)
-# {:ok, %IslandsEngine.Coordinate{row: 4, col: 6}}
-
-# iex(11)> Island.new(:l_shape, coordinate)
-# {:ok,
-#  %IslandsEngine.Island{
-#    coordinates: MapSet.new([
-#      %IslandsEngine.Coordinate{row: 4, col: 6},
-#      %IslandsEngine.Coordinate{row: 5, col: 6},
-#      %IslandsEngine.Coordinate{row: 6, col: 6},
-#      %IslandsEngine.Coordinate{row: 6, col: 7}
-#    ]),
-#    hit_coordinates: MapSet.new([])
-#  }}
-
-# iex(12)> {:ok, coordinate} = Coordinate.new(10, 10)
-# {:ok, %IslandsEngine.Coordinate{row: 10, col: 10}}
-
-# iex(13)> Island.new(:l_shape, coordinate)
-# {:error, :invalid_coordinate}
